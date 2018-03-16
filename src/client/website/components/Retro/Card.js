@@ -13,6 +13,8 @@ import Done from 'material-ui-icons/Done';
 import DeleteIcon from 'material-ui-icons/Delete';
 import EditIcon from 'material-ui-icons/Edit';
 import { FormattedMessage } from 'react-intl';
+import { Draggable } from 'react-beautiful-dnd';
+import * as _ from 'lodash';
 import onClickOutside from 'react-onclickoutside';
 import {
   QUERY_ERROR_KEY,
@@ -39,23 +41,26 @@ class Card extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    const { editCardQuery, removeCardQuery, addMessage } = this.props;
-    const { editCardQuery: nextEditCardQuery, removeCardQuery: nextRemoveCardQuery } = nextProps;
+    const { editCardQuery, removeCardQuery, groupAssignQuery, addMessage } = this.props;
+    const { editCardQuery: nextEditCardQuery, removeCardQuery: nextRemoveCardQuery,
+      groupAssignQuery: nextGroupAssignQuery } = nextProps;
 
     if (queryFailed(editCardQuery, nextEditCardQuery)) {
       addMessage(nextEditCardQuery[QUERY_ERROR_KEY]);
     }
-
     if (queryFailed(removeCardQuery, nextRemoveCardQuery)) {
       addMessage(nextRemoveCardQuery[QUERY_ERROR_KEY]);
+    }
+    if(queryFailed(groupAssignQuery, nextGroupAssignQuery)) {
+      addMessage(nextGroupAssignQuery[QUERY_ERROR_KEY]);
     }
   }
 
   vote(vote = true) {
     const { socket } = this.context;
-    const { editCard, card: { id }, userId } = this.props;
+    const { editCard, card: { id, columnId }, userId } = this.props;
 
-    editCard(socket, { id, addVote: vote && userId, removeVote: !vote && userId });
+    editCard(socket, { id, addVote: vote && userId, removeVote: !vote && userId, columnId });
   }
 
   handleTextChange = (e) => {
@@ -88,70 +93,115 @@ class Card extends Component {
     }
   };
 
+  onDragStart = (e) => {
+    e.dataTransfer.setData("text", e.target.id);
+    document.getElementById(e.target.id).style.cursor = "grabbing";
+  };
+
+  onDragEnd = (e) => {
+    document.getElementById(e.target.id).style.cursor = "grab";
+  }
+
+  allowDrop = (e) => {
+    e.preventDefault();
+  };
+
+  onDrop = (e) => {
+    e.preventDefault();
+    const draggableId = e.dataTransfer.getData("text");
+    const droppableId = e.currentTarget;
+
+    const { socket } = this.context;
+    const { editCard } = this.props;
+    const groupId = this.guidGenerator();
+
+    editCard(socket, {id: draggableId, groupId: 1 });
+    editCard(socket, {id: droppableId, groupId: 1 });
+    //assignGroupToCards(socket, [draggableId, droppableId], 1);
+  };
+
+  guidGenerator() {
+    var S4 = function() {
+       return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+    };
+    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+  }
+
   render() {
-    const { userId, votes, userSubmmitedVotes, card, classes, removeCard, retroStep } = this.props;
+    const { userId, votes, userSubmmitedVotes, card, classes, removeCard, retroStep,
+      index } = this.props;
     const { isEditing, text } = this.state;
     const { socket } = this.context;
+    console.log(card)
     return (
-      <MaterialCard className={classes.card}>
-        <CardContent key="content">
-          {isEditing ? (
-            <TextField
-              multiline
-              autoFocus
-              margin="dense"
-              onChange={this.handleTextChange}
-              label={<FormattedMessage id="retro.add-card-label" />}
-              fullWidth
-              value={text}
-            />
-          ) : (
-            <Typography align="left" className={classes.text} onDoubleClick={this.startEditing}>
-              {card.text}
-            </Typography>
-          )}
-        </CardContent>
-        <CardActions key="actions" className={classes.cardActions}>
-          {(!isEditing) && card.authors.map(({ id, name }) => (
-            <Button key={id} size="small" className={classes.author}>{name}</Button>
-          ))}
-          <div className={classes.expander} />
-          {isEditing &&
-            <IconButton key="done" className={classes.action} onClick={this.editCard}>
-              <Done className={classes.doneIcon} />
-            </IconButton>
-          }
-          {(!isEditing && (retroStep === 'write' || retroStep === 'closed')
-            && card.authors.find(({ id }) => id === userId)) && [
-              <IconButton key="edit" className={classes.action} onClick={this.startEditing}>
-                <EditIcon className={classes.editIcon} />
-              </IconButton>,
-              <ConfirmActionDialog
-                key="delete-confirm"
-                TriggeringComponent={({ onClick }) => (
-                  <IconButton
-                    key="delete"
-                    className={classes.action}
-                  >
-                    <DeleteIcon className={classes.delIcon} onClick={onClick} />
-                  </IconButton>
-                )
-                }
-                textContent={<FormattedMessage id="retro.confirm-delete-card" />}
-                onConfirm={() => removeCard(socket, card.id)}
+      <div id={card.id} draggable="true" 
+        onDragOver={(e)=>{ this.allowDrop(e); }}
+        onDrop={(e) => {this.onDrop(e)}}
+        onDragStart={(e)=>{this.onDragStart(e); }}
+        onDragEnd={(e)=>{this.onDragEnd(e)}}
+      >
+        <MaterialCard
+          className={classes.card}
+        >
+          <CardContent key="content">
+            {isEditing ? (
+              <TextField
+                multiline
+                autoFocus
+                margin="dense"
+                onChange={this.handleTextChange}
+                label={<FormattedMessage id="retro.add-card-label" />}
+                fullWidth
+                value={text}
               />
-            ]}
-        </CardActions>
-        {retroStep === 'vote' &&
-          <Votes
-            key="votes"
-            disabled={votes - userSubmmitedVotes <= 0}
-            totalVotesNr={card.votes.length}
-            userVotesNr={card.votes.filter(v => v === userId).length}
-            addUserVote={this.addVote}
-            removeUserVote={this.removeVote}
-          />}
-      </MaterialCard>
+            ) : (
+              <Typography align="left" className={classes.text} onDoubleClick={this.startEditing}>
+                {card.text}
+              </Typography>
+            )}
+          </CardContent>
+          <CardActions key="actions" className={classes.cardActions}>
+            {(!isEditing) && card.authors.map(({ id, name }) => (
+              <Button key={id} size="small" className={classes.author}>{name}</Button>
+            ))}
+            <div className={classes.expander} />
+            {isEditing &&
+              <IconButton key="done" className={classes.action} onClick={this.editCard}>
+                <Done className={classes.doneIcon} />
+              </IconButton>
+            }
+            {(!isEditing && (retroStep === 'write' || retroStep === 'closed')
+              && card.authors.find(({ id }) => id === userId)) && [
+                <IconButton key="edit" className={classes.action} onClick={this.startEditing}>
+                  <EditIcon className={classes.editIcon} />
+                </IconButton>,
+                <ConfirmActionDialog
+                  key="delete-confirm"
+                  TriggeringComponent={({ onClick }) => (
+                    <IconButton
+                      key="delete"
+                      className={classes.action}
+                    >
+                      <DeleteIcon className={classes.delIcon} onClick={onClick} />
+                    </IconButton>
+                  )
+                  }
+                  textContent={<FormattedMessage id="retro.confirm-delete-card" />}
+                  onConfirm={() => removeCard(socket, card.id)}
+                />
+              ]}
+          </CardActions>
+          {retroStep === 'vote' &&
+            <Votes
+              key="votes"
+              disabled={votes - userSubmmitedVotes <= 0}
+              totalVotesNr={card.votes.length}
+              userVotesNr={card.votes.filter(v => v === userId).length}
+              addUserVote={this.addVote}
+              removeUserVote={this.removeVote}
+            />}
+        </MaterialCard>
+      </div>         
     );
   }
 }
@@ -170,8 +220,10 @@ Card.propTypes = {
     id: PropTypes.string.isRequired,
     text: PropTypes.string.isRequired,
     new: PropTypes.bool,
-    authors: PropTypes.arrayOf(PropTypes.object).isRequired
+    authors: PropTypes.arrayOf(PropTypes.object).isRequired,
+    groupId: PropTypes.string
   }).isRequired,
+  index: PropTypes.number.isRequired,
   // Functions
   editCard: PropTypes.func.isRequired,
   removeCard: PropTypes.func.isRequired,

@@ -9,7 +9,8 @@ const styles = theme => ({
     border: '1px dashed #ccc',
     margin: theme.spacing.unit,
     borderRadius: 3,
-    padding: theme.spacing.unit
+    padding: theme.spacing.unit,
+    paddingBottom: '100px'
   },
   header: {
     display: 'flex',

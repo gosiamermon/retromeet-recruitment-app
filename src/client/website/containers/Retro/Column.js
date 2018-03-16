@@ -9,7 +9,7 @@ import {
   COLUMN_EDIT_QUERY_KEY,
   RETRO_CARDS_KEY
 } from '../../reducers/retro';
-import { cardAdd } from '../../actions/card';
+import { cardAdd, cardEdit } from '../../actions/card';
 import { addMessage } from '../../actions/layout';
 
 const mapStateToProps = ({ retro }) => ({
@@ -21,6 +21,7 @@ const mapStateToProps = ({ retro }) => ({
 const mapDispatchToProps = dispatch => ({
   editColumn: (socket, column) => dispatch(columnEdit(socket, column)),
   addCard: (socket, columnId, text) => dispatch(cardAdd(socket, columnId, text)),
+  editCard: (socket, card) => dispatch(cardEdit(socket, card)),
   addMessage: message => dispatch(addMessage(message))
 });
 

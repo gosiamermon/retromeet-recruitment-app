@@ -2,13 +2,17 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { IconButton, Typography } from 'material-ui';
 import PlaylistAdd from 'material-ui-icons/PlaylistAdd';
+import { Droppable } from 'react-beautiful-dnd';
+import * as _ from 'lodash';
 import Card from '../../containers/Retro/Card';
 import { QUERY_ERROR_KEY, queryFailed, QueryShape } from '../../services/websocket/query';
 
 class Column extends Component {
   constructor(props) {
     super(props);
-    this.state = { text: '' };
+    this.state = { 
+      text: '' ,
+    };
   }
 
   componentWillReceiveProps(nextProps) {
@@ -32,11 +36,25 @@ class Column extends Component {
     this.setState({ text: e.target.value });
   };
 
-  render() {
-    const { column, cards, classes } = this.props;
+  allowDrop = (e) => {
+    e.preventDefault();
+  };
 
+  onDrop = (e) => {
+    e.preventDefault();
+    var cardId = e.dataTransfer.getData("text");
+    const { column: { id }, editCard } = this.props;
+    const { socket } = this.context;
+    //editCard(socket, {id: cardId, columnId: id});
+  };
+
+  render() {
+    const { column, classes,cards } = this.props;
     return (
-      <div className={classes.column}>
+      <div id={column.id} className={classes.column}
+        onDragOver={(e)=>{ this.allowDrop(e); }}
+        onDrop={(e) => {this.onDrop(e); }}
+      >
         <div className={classes.header}>
           <Typography
             type="headline"
@@ -48,8 +66,8 @@ class Column extends Component {
             <PlaylistAdd className={classes.actionIcon} />
           </IconButton>
         </div>
-        {cards.filter(card => column.id === card.columnId).map(card => (
-          <Card card={card} key={card.id} />
+        {cards.filter(card => column.id === card.columnId).map((card, index) => (
+          <Card index={index} card={card} key={card.id} />
         ))}
       </div>
     );

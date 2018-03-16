@@ -33,7 +33,10 @@ import {
   CARD_EDIT_SUCCESS,
   CARD_REMOVE_FAILURE,
   CARD_REMOVE_IN_PROGRESS,
-  CARD_REMOVE_SUCCESS
+  CARD_REMOVE_SUCCESS,
+  GROUP_ASSIGN_IN_PROGRESS,
+  GROUP_ASSIGN_SUCCESS,
+  GROUP_ASSIGN_FAILURE
 } from '../actions/card';
 import {
   STEPS_CHANGE_IN_PROGRESS,
@@ -64,6 +67,7 @@ export const COLUMN_REMOVE_QUERY_KEY = 'removeColumn';
 export const COLUMN_EDIT_QUERY_KEY = 'editColumn';
 export const CARD_ADD_QUERY_KEY = 'addCard';
 export const CARD_REMOVE_QUERY_KEY = 'removeCard';
+export const GROUP_ASSIGN_QUERY_KEY = 'assignGroup';
 export const CARD_EDIT_QUERY_KEY = 'editCard';
 export const CARD_VOTES_KEY = 'votes';
 export const STEPS_CHANGE_QUERY_KEY = 'stepChange';
@@ -89,6 +93,7 @@ const initialState = {
   [CARD_ADD_QUERY_KEY]: QUERY_DEFAULT(),
   [CARD_REMOVE_QUERY_KEY]: QUERY_DEFAULT(),
   [CARD_EDIT_QUERY_KEY]: QUERY_DEFAULT(),
+  [GROUP_ASSIGN_QUERY_KEY]: QUERY_DEFAULT(),
   [STEPS_CHANGE_QUERY_KEY]: QUERY_DEFAULT()
 };
 
@@ -251,7 +256,7 @@ const ACTION_HANDLERS = {
           .find(column => column.id === editCard.id);
 
         if (cardToUpdate) {
-          delete editCard.new;
+          editCard.new = false; // cannot be true since after component update it automatically becomes editable 
           Object.assign(cardToUpdate, editCard);
         }
 
@@ -260,6 +265,23 @@ const ACTION_HANDLERS = {
     },
     CARD_EDIT_FAILURE
   ], CARD_EDIT_QUERY_KEY),
+  ...handleQuery([
+    GROUP_ASSIGN_IN_PROGRESS,
+    {
+      [GROUP_ASSIGN_SUCCESS](state, payload) {
+        const newState = deepClone(state);
+        const { cards } = payload;
+        const currentCards = newState[RETRO_CARDS_KEY]
+          .forEach(currentCard => {
+            if (cards.some(card.id === currentCard.id)){
+              Object.assign(currentCard, card);
+            }
+          });    
+        return newState;
+      }
+    },
+    GROUP_ASSIGN_FAILURE
+  ], GROUP_ASSIGN_QUERY_KEY),
   ...handleQuery([
     STEPS_CHANGE_IN_PROGRESS,
     {

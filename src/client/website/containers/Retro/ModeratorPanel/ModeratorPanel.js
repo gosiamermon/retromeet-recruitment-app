@@ -12,7 +12,7 @@ const mapStateToProps = ({ user, retro }) => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  changeStep: (socket, step) => dispatch(changeStep(socket, step))
+  changeStep: (socket, step) => dispatch(changeStep(socket, step)),
 });
 
 export default withStyles(styles)(

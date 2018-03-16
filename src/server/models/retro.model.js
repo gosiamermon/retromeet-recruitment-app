@@ -27,6 +27,9 @@ const cardSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Column'
   },
+  groupId: {
+    type: String
+  },
   authors: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

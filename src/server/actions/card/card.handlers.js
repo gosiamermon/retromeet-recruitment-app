@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Retro from '../../models/retro.model';
 import User from '../../models/user.model';
-import { ACTION_CARD_ADD, ACTION_CARD_EDIT, ACTION_CARD_REMOVE } from './card.actions';
+import { ACTION_CARD_ADD, ACTION_CARD_EDIT, ACTION_CARD_REMOVE, ACTION_ASSIGN_CARD_GROUP } from './card.actions';
 import { getId, getIds } from '../../utils';
 
 export default {
@@ -50,7 +50,7 @@ export default {
   },
   [ACTION_CARD_EDIT]: async (params, state) => {
     const { retroId, userId } = state;
-    const { text, id, addVote, removeVote } = params;
+    const { text, id, addVote, removeVote, columnId, groupId } = params;
     const retro = await Retro.findById(retroId).populate('cards.authors');
     if (!retro.participates(userId)) {
       throw new Error('You are not participating in a retrospective.');
@@ -64,7 +64,8 @@ export default {
       card.votes.splice(key, 1);
     }
     if (text) card.text = text;
-
+    if (columnId) card.columnId = columnId;
+    if (groupId) card.groupId = groupId;
     const updatedRetro = await retro.save();
 
     if (!updatedRetro) {
@@ -75,7 +76,37 @@ export default {
         id,
         text: card.text,
         authors: card.authors,
-        votes: getIds(card.votes)
+        votes: getIds(card.votes),
+        columnId: card.columnId,
+        groupId: card.groupId
+      }
+    };
+  },
+  [ACTION_ASSIGN_CARD_GROUP]: async (params, state) => {
+    const { retroId, userId } = state;
+    const { ids, groupId } = params;
+    const retro = await Retro.findById(retroId).populate('cards.authors');
+    if (!retro.participates(userId)) {
+      throw new Error('You are not participating in a retrospective.');
+    }
+    ids.forEach(id => {
+      const cardIndex = retro.cards.findIndex(c => c.id === id);
+      const card = retro.cards[cardIndex];
+      if (groupId) card.groupId = groupId;
+    })
+    const updatedRetro = await retro.save();
+    if (!updatedRetro) {
+      throw new Error('Cards not updated because they doesn\'t exist or you don\'t have sufficient privileges.');
+    }
+    const cards = ids.map(id => {
+      return{
+        id,
+        groupId
+      };
+    });
+    return {
+      broadcast: {
+        cards
       }
     };
   },

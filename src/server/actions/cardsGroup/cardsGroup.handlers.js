@@ -1,26 +1,32 @@
 import mongoose from 'mongoose';
 import Retro from '../../models/retro.model';
 import User from '../../models/user.model';
-import { ACTION_CARD_ADD, ACTION_CARD_EDIT, ACTION_CARD_REMOVE } from './card.actions';
+import { ACTION_GROUP_ADD, ACTION_GROUP_EDIT, ACTION_GROUP_REMOVE } from './cardsGroup.actions';
 import { getId, getIds } from '../../utils';
 
 export default {
-  [ACTION_CARD_ADD]: async (params, state) => {
+  [ACTION_GROUP_ADD]: async (params, state) => {
     const { retroId, userId } = state;
-    const { text, columnId } = params;
+    const { columnId, cardsIds } = params;
     const retro = await Retro.findById(retroId);
     if (!retro || !retro.participates(userId)) {
       throw new Error('You are not participating in a retrospective.');
     }
     const column = retro.columns.find(c => getId(c) === columnId);
     if (!column) throw new Error('Column incorrect or not selected.');
-    const user = await User.findById(userId);
-    const card = {
+
+    
+    cardsIds.forEach(id => {
+      const cardIndex = retro.cards.findIndex(c => c.id === id);
+      const card = retro.cards[cardIndex];
+      card.votes = [];
+    });
+    await retro.save();
+
+    const cardsGroup = {
       _id: new mongoose.Types.ObjectId(),
       columnId,
-      text,
-      new: true,
-      authors: [userId],
+      cardsIds,
       votes: []
     };
 
@@ -28,8 +34,8 @@ export default {
       { _id: retroId },
       {
         $push: {
-          cards: {
-            $each: [card], $position: 0
+          cardsGroups: {
+            $each: [cardsGroup], $position: 0
           }
         }
       },
@@ -41,31 +47,29 @@ export default {
 
     return {
       broadcast: {
-        ...card,
-        ...{ authors: [user] },
+        ...cardsGroup,
         _id: undefined,
-        id: getId(card._id)
+        id: getId(cardsGroup._id)
       }
     };
   },
-  [ACTION_CARD_EDIT]: async (params, state) => {
+  [ACTION_GROUP_EDIT]: async (params, state) => {
     const { retroId, userId } = state;
-    const { text, id, addVote, removeVote, columnId } = params;
-    const retro = await Retro.findById(retroId).populate('cards.authors');
+    const { id, cardsIds, columnId, addVote, removeVote } = params;
+    const retro = await Retro.findById(retroId);
     if (!retro.participates(userId)) {
       throw new Error('You are not participating in a retrospective.');
     }
-    const cardIndex = retro.cards.findIndex(c => c.id === id);
-    const card = retro.cards[cardIndex];
+    const cardsGroupIndex = retro.cardsGroups.findIndex(cg => cg.id === id);
+    const cardsGroup = retro.cardsGroups[cardsGroupIndex];
 
-    if (addVote) card.votes.push(addVote);
+    if (addVote) cardsGroup.votes.push(addVote);
     if (removeVote) {
-      const key = card.votes.findIndex(v => v.toHexString() === removeVote);
-      card.votes.splice(key, 1);
+      const key = cardsGroup.votes.findIndex(v => v.toHexString() === removeVote);
+      cardsGroup.votes.splice(key, 1);
     }
-    if (text) card.text = text;
-    if (columnId) card.columnId = columnId;
-
+    if (columnId) cardsGroup.columnId = columnId;
+    if (cardsIds) cardsGroup.cardsIds = cardsIds;
     const updatedRetro = await retro.save();
 
     if (!updatedRetro) {
@@ -74,26 +78,25 @@ export default {
     return {
       broadcast: {
         id,
-        text: card.text,
-        authors: card.authors,
-        votes: getIds(card.votes),
-        columnId: card.columnId
+        votes: getIds(cardsGroup.votes),
+        columnId: cardsGroup.columnId,
+        cardsIds: cardsGroup.cardsIds
       }
     };
   },
-  [ACTION_CARD_REMOVE]: async (params, state) => {
+  [ACTION_GROUP_REMOVE]: async (params, state) => {
     const { retroId, userId } = state;
     const { id } = params;
     const retro = await Retro.findById(retroId);
     if (!retro.participates(userId)) {
       throw new Error('You are not participating in a retrospective.');
     }
-
+    
     const updated = await Retro.findOneAndUpdate({
       _id: retroId,
-      cards: { $elemMatch: { _id: id, authors: userId } }
+      cardsGroups: { $elemMatch: { _id: id } }
     }, {
-      $pull: { cards: { _id: id } }
+      $pull: { cardsGroups: { _id: id } }
     }, {
       new: true
     }).exec();
@@ -108,4 +111,4 @@ export default {
       }
     };
   }
-};
+}

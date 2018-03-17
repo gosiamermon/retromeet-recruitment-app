@@ -13,12 +13,16 @@ import userHandlers from './user/user.handlers';
 import stepsActions from './steps/steps.actions';
 import stepsHandlers from './steps/steps.handlers';
 
+import cardsGroupActions from './cardsGroup/cardsGroup.actions';
+import cardsGroupHandlers from './cardsGroup/cardsGroup.handlers';
+
 const handlers = {
   ...cardHandlers,
   ...columnHandlers,
   ...retroHandlers,
   ...userHandlers,
-  ...stepsHandlers
+  ...stepsHandlers,
+  ...cardsGroupHandlers
 };
 
 const actions = {
@@ -26,7 +30,8 @@ const actions = {
   ...columnActions,
   ...retroActions,
   ...userActions,
-  ...stepsActions
+  ...stepsActions,
+  ...cardsGroupActions
 };
 
 export {

@@ -7,8 +7,7 @@ const styles = theme => ({
     padding: theme.spacing.unit,
     margin: `${theme.spacing.unit / 2}px 0`,
     boxShadow: '0 9px 0 -2px rgba(0,0,0,0.05), 0 2px rgba(0,0,0,.1)',
-    borderRadius: '4px',
-    cursor: "grab"
+    borderRadius: '4px'
   },
   cardActions: {
     height: 'auto'

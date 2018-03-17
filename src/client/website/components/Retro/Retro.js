@@ -22,6 +22,7 @@ import {
 import Column from '../../containers/Retro/Column';
 import Steps from '../../containers/Retro/Steps';
 import { initialsOf } from '../../services/utils/initials';
+import Modal from '../../containers/Retro/Modal';
 
 class Retro extends Component {
   componentWillMount() {
@@ -78,6 +79,7 @@ class Retro extends Component {
                 </Tooltip>
               ))}
             </div>
+            <Modal />
           </div>
         );
       case QUERY_STATUS_FAILURE:
@@ -92,6 +94,7 @@ class Retro extends Component {
                 <Button onClick={() => history.goBack()}>Back</Button>
               </CardActions>
             </Card>
+            <Modal />
           </div>
         );
       default:

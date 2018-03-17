@@ -5,7 +5,10 @@ import PlaylistAdd from 'material-ui-icons/PlaylistAdd';
 import { Droppable } from 'react-beautiful-dnd';
 import * as _ from 'lodash';
 import Card from '../../containers/Retro/Card';
+import { CARD } from './Card';
+import CardsGroup from '../../containers/Retro/CardsGroup';
 import { QUERY_ERROR_KEY, queryFailed, QueryShape } from '../../services/websocket/query';
+import deepClone from '../../services/utils/deepClone';
 
 class Column extends Component {
   constructor(props) {
@@ -40,20 +43,42 @@ class Column extends Component {
     e.preventDefault();
   };
 
-  onDrop = (e) => {
+  switchToColumn = (e) => {
     e.preventDefault();
-    var cardId = e.dataTransfer.getData("text");
-    const { column: { id }, editCard } = this.props;
+    const data = JSON.parse(e.dataTransfer.getData("text"));
+
+    const { column: { id }, editGroup, editCard } = this.props;
     const { socket } = this.context;
-    //editCard(socket, {id: cardId, columnId: id});
+
+    if (data.type === CARD) {
+      editCard(socket, {id: data.id, columnId: id});
+      return;
+    }
+    editGroup(socket, {id: data.id, columnId: id});
+  };
+
+  prepareCardsAndGroups(cards, groups) {
+    groups.forEach(group => {
+      group.cards = cards.filter(card => 
+        group.cardsIds.some(cardId => cardId === card.id));
+    });
+    const allGroupedCardsIds = [].concat.apply([], groups.map(group => group.cardsIds));
+    cards = cards.filter(card => !allGroupedCardsIds.some(cardId => cardId === card.id));
+
+    groups.forEach(group => {
+      delete group.cardsIds;
+    });
+    return { cards, groups };
   };
 
   render() {
-    const { column, classes,cards } = this.props;
+    const { column, classes, cards, groups } = this.props;
+    const prepared = this.prepareCardsAndGroups(deepClone(cards), deepClone(groups));
+
     return (
       <div id={column.id} className={classes.column}
         onDragOver={(e)=>{ this.allowDrop(e); }}
-        onDrop={(e) => {this.onDrop(e); }}
+        onDrop={(e) => {this.switchToColumn(e); }}
       >
         <div className={classes.header}>
           <Typography
@@ -66,8 +91,11 @@ class Column extends Component {
             <PlaylistAdd className={classes.actionIcon} />
           </IconButton>
         </div>
-        {cards.filter(card => column.id === card.columnId).map((card, index) => (
-          <Card index={index} card={card} key={card.id} />
+        {prepared.groups.filter(group => column.id === group.columnId).map(group => (
+          <CardsGroup cardsGroup={group} key={group.id} />
+        ))}
+        {prepared.cards.filter(card => column.id === card.columnId).map(card => (
+          <Card card={card} key={card.id} />
         ))}
       </div>
     );

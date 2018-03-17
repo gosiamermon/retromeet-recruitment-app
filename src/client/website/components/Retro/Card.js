@@ -13,8 +13,6 @@ import Done from 'material-ui-icons/Done';
 import DeleteIcon from 'material-ui-icons/Delete';
 import EditIcon from 'material-ui-icons/Edit';
 import { FormattedMessage } from 'react-intl';
-import { Draggable } from 'react-beautiful-dnd';
-import * as _ from 'lodash';
 import onClickOutside from 'react-onclickoutside';
 import {
   QUERY_ERROR_KEY,
@@ -23,6 +21,9 @@ import {
 } from '../../services/websocket/query';
 import ConfirmActionDialog from '../../containers/ConfirmActionDialog';
 import Votes from '../../components/Votes';
+import Modal from '../../containers/Retro/Modal';
+
+export const CARD = 'CARD';
 
 class Card extends Component {
   constructor(props) {
@@ -31,19 +32,22 @@ class Card extends Component {
     this.state = { isEditing: false, text: card.text };
     this.addVote = this.vote.bind(this, true);
     this.removeVote = this.vote.bind(this, false);
+    this.mergeCards = this.merge.bind(this);
+    this.draggableData = {}
+    this.confirmMergeQuestion = 'Would you like to merge these cards?'
   }
 
   componentDidMount() {
-    const { card, userId } = this.props;
+    const { card, userId, retroStep } = this.props;
     const isAuthor = card.authors.find(({ id }) => id === userId) !== undefined;
     return (card.new && card.authors.length === 1 && isAuthor)
       && this.startEditing();
   }
 
   componentWillReceiveProps(nextProps) {
-    const { editCardQuery, removeCardQuery, groupAssignQuery, addMessage } = this.props;
+    const { editCardQuery, removeCardQuery, addGroupQuery, addMessage } = this.props;
     const { editCardQuery: nextEditCardQuery, removeCardQuery: nextRemoveCardQuery,
-      groupAssignQuery: nextGroupAssignQuery } = nextProps;
+      addGroupQuery: nextAddGroupQuery } = nextProps;
 
     if (queryFailed(editCardQuery, nextEditCardQuery)) {
       addMessage(nextEditCardQuery[QUERY_ERROR_KEY]);
@@ -51,8 +55,8 @@ class Card extends Component {
     if (queryFailed(removeCardQuery, nextRemoveCardQuery)) {
       addMessage(nextRemoveCardQuery[QUERY_ERROR_KEY]);
     }
-    if(queryFailed(groupAssignQuery, nextGroupAssignQuery)) {
-      addMessage(nextGroupAssignQuery[QUERY_ERROR_KEY]);
+    if(queryFailed(addGroupQuery, nextAddGroupQuery)) {
+      addMessage(nextAddGroupQuery[QUERY_ERROR_KEY]);
     }
   }
 
@@ -69,6 +73,8 @@ class Card extends Component {
 
   startEditing = () => {
     const { card, card: { text }, userId, retroStep } = this.props;
+    document.getElementById(card.id).setAttribute("draggable", "false"); 
+    document.getElementById(card.id).style.cursor = "auto";
     if ((retroStep === 'write' || retroStep === 'closed') && card.authors.find(({ id }) => id === userId)) {
       this.setState({ isEditing: true, text });
     }
@@ -81,6 +87,8 @@ class Card extends Component {
     if (text.replace(/^\s+|\s+$/g, '').length !== 0) {
       editCard(socket, { id, text });
       this.setState({ isEditing: false });
+      document.getElementById(id).style.cursor = "grab";
+      document.getElementById(id).setAttribute("draggable", "true"); 
     }
   };
 
@@ -94,7 +102,11 @@ class Card extends Component {
   };
 
   onDragStart = (e) => {
-    e.dataTransfer.setData("text", e.target.id);
+    const data = {
+      id: e.target.id,
+      type: CARD
+    }
+    e.dataTransfer.setData("text", JSON.stringify(data));
     document.getElementById(e.target.id).style.cursor = "grabbing";
   };
 
@@ -106,37 +118,40 @@ class Card extends Component {
     e.preventDefault();
   };
 
-  onDrop = (e) => {
+  showModal = (e) => {
     e.preventDefault();
-    const draggableId = e.dataTransfer.getData("text");
-    const droppableId = e.currentTarget;
-
-    const { socket } = this.context;
-    const { editCard } = this.props;
-    const groupId = this.guidGenerator();
-
-    editCard(socket, {id: draggableId, groupId: 1 });
-    editCard(socket, {id: droppableId, groupId: 1 });
-    //assignGroupToCards(socket, [draggableId, droppableId], 1);
+    this.draggableData = JSON.parse(e.dataTransfer.getData("text"));
+    const { card, showModal } = this.props;
+    if(this.draggableData.type === CARD && card.id !== this.draggableData.id) {
+      showModal(this.confirmMergeQuestion, this.mergeCards);
+    }
   };
 
-  guidGenerator() {
-    var S4 = function() {
-       return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
-    };
-    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+  merge = () => {
+    const { card, addGroup } = this.props;
+    const { socket } = this.context;
+    addGroup(socket, card.columnId, [card.id, this.draggableData.id]);
   }
 
   render() {
-    const { userId, votes, userSubmmitedVotes, card, classes, removeCard, retroStep,
-      index } = this.props;
+    const { userId, votes, userSubmmitedVotes, card, classes, removeCard, retroStep } = this.props;
     const { isEditing, text } = this.state;
     const { socket } = this.context;
-    console.log(card)
+
+    let draggable
+    let style = {}
+    if (retroStep === 'write'){
+      draggable = 'true'
+      style.cursor = 'grab'
+    }
+    else {
+      draggable = 'false'
+    }
     return (
-      <div id={card.id} draggable="true" 
+      <div className={classes.draggableWrapper} id={card.id} draggable={draggable}
+        style={style}
         onDragOver={(e)=>{ this.allowDrop(e); }}
-        onDrop={(e) => {this.onDrop(e)}}
+        onDrop={(e) => {this.showModal(e)}}
         onDragStart={(e)=>{this.onDragStart(e); }}
         onDragEnd={(e)=>{this.onDragEnd(e)}}
       >
@@ -220,10 +235,8 @@ Card.propTypes = {
     id: PropTypes.string.isRequired,
     text: PropTypes.string.isRequired,
     new: PropTypes.bool,
-    authors: PropTypes.arrayOf(PropTypes.object).isRequired,
-    groupId: PropTypes.string
+    authors: PropTypes.arrayOf(PropTypes.object).isRequired
   }).isRequired,
-  index: PropTypes.number.isRequired,
   // Functions
   editCard: PropTypes.func.isRequired,
   removeCard: PropTypes.func.isRequired,

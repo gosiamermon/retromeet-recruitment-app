@@ -7,13 +7,16 @@ import { columnEdit } from '../../actions/column';
 import {
   CARD_ADD_QUERY_KEY,
   COLUMN_EDIT_QUERY_KEY,
-  RETRO_CARDS_KEY
+  RETRO_CARDS_KEY,
+  RETRO_GROUPS_KEY
 } from '../../reducers/retro';
 import { cardAdd, cardEdit } from '../../actions/card';
+import { groupEdit } from '../../actions/cardsGroup';
 import { addMessage } from '../../actions/layout';
 
 const mapStateToProps = ({ retro }) => ({
   cards: retro[RETRO_CARDS_KEY],
+  groups: retro[RETRO_GROUPS_KEY],
   editColumnQuery: retro[COLUMN_EDIT_QUERY_KEY],
   addCardQuery: retro[CARD_ADD_QUERY_KEY]
 });
@@ -22,6 +25,7 @@ const mapDispatchToProps = dispatch => ({
   editColumn: (socket, column) => dispatch(columnEdit(socket, column)),
   addCard: (socket, columnId, text) => dispatch(cardAdd(socket, columnId, text)),
   editCard: (socket, card) => dispatch(cardEdit(socket, card)),
+  editGroup: (socket, group) => dispatch(groupEdit(socket, group)),
   addMessage: message => dispatch(addMessage(message))
 });
 

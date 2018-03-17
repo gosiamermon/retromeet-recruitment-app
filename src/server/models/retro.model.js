@@ -27,9 +27,6 @@ const cardSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Column'
   },
-  groupId: {
-    type: String
-  },
   authors: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -42,6 +39,23 @@ const cardSchema = new mongoose.Schema({
 cardSchema.set('toJSON', conversionOptions);
 cardSchema.set('toObject', conversionOptions);
 
+const cardsGroupSchema = new mongoose.Schema({
+  columnId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Column'
+  },
+  cardsIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Card'
+  }],
+  votes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
+});
+cardsGroupSchema.set('toJSON', conversionOptions);
+cardsGroupSchema.set('toObject', conversionOptions);
+
 const retroSchema = new mongoose.Schema({
   created: {
     type: Date,
@@ -51,6 +65,7 @@ const retroSchema = new mongoose.Schema({
   name: String,
   columns: [columnSchema],
   cards: [cardSchema],
+  cardsGroups: [cardsGroupSchema],
   voteLimit: Number,
   step: {
     type: String,

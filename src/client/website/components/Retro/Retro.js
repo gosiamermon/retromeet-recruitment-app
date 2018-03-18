@@ -7,8 +7,12 @@ import {
   CardActions,
   CardContent,
   Tooltip,
-  Typography
+  Typography,
+  Switch,
+  IconButton,
+  TextField
 } from 'material-ui';
+import ViewColumnIcon from 'material-ui-icons/ViewColumn';
 import { CircularProgress } from 'material-ui/Progress';
 import {
   QUERY_ERROR_KEY,
@@ -22,9 +26,18 @@ import {
 import Column from '../../containers/Retro/Column';
 import Steps from '../../containers/Retro/Steps';
 import { initialsOf } from '../../services/utils/initials';
-import Modal from '../../containers/Retro/Modal';
+import ConfirmModal from '../../containers/Retro/ConfirmModal';
+import ColSelectionModal from '../../containers/Retro/ColSelectionModal';
+import deepClone from '../../services/utils/deepClone';
 
 class Retro extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      sortColumns: false,
+      searchPhrase: ''
+    }
+  }
   componentWillMount() {
     this.joinRetro();
   }
@@ -46,25 +59,74 @@ class Retro extends Component {
     joinRetro(socket, retroShareId);
   };
 
+  toggleSort = (e, checked) => {
+    this.setState({
+      sortColumns: checked
+    });
+  };
+
+  setSearchPhrase = (e) => {
+    this.setState({
+      searchPhrase: e.target.value
+    });
+  };
+
+  selectVisibleColumns = (userSettings, columns) => {
+    if (userSettings.columnsVisible) {
+      columns = columns
+      .filter(column => userSettings.columnsVisible
+        .some(c => c === column.id));
+    }
+    return columns;
+  };
+
   render() {
     const {
       classes,
       columns,
       users,
+      userSettings,
       history,
+      step,
+      showModal,
       joinRetroQuery: {
         [QUERY_STATUS_KEY]: joinStatus,
         [QUERY_ERROR_KEY]: joinError
       }
     } = this.props;
+    const { socket } = this.context;
+    const { sortColumns, searchPhrase } = this.state;
+
+    const visibleColumns = this.selectVisibleColumns(userSettings, deepClone(columns));
+
+    const toggled = userSettings.columnsSorted !== undefined ? userSettings.columnsSorted : false;
+
+
     switch (joinStatus) {
       case QUERY_STATUS_SUCCESS:
         return (
           <div className={classes.root}>
             <Steps />
+            <div className={classes.toolbar}>
+              {
+                step === 'vote' &&
+                <div className={classes.switch} >
+                <label>Sort columns by votes</label>
+                <Switch onChange={this.toggleSort} />
+                </div>
+              }
+            <IconButton className={classes.colSelectionButton} onClick={showModal}>
+              <ViewColumnIcon />
+            </IconButton>
+            <TextField
+              className={classes.searchbox}
+              helperText="Input search phrase"
+              onChange={this.setSearchPhrase}
+            />
+            </div>
             <div className={classes.columns}>
-              {columns.map(column => (
-                <Column key={column.id} column={column} />
+              {visibleColumns.map(column => (
+                <Column searchPhrase={searchPhrase} sort={sortColumns} key={column.id} column={column} />
               ))}
             </div>
             <div className={classes.users}>
@@ -79,7 +141,8 @@ class Retro extends Component {
                 </Tooltip>
               ))}
             </div>
-            <Modal />
+            <ConfirmModal />
+            <ColSelectionModal socket={ socket } />
           </div>
         );
       case QUERY_STATUS_FAILURE:
@@ -94,7 +157,6 @@ class Retro extends Component {
                 <Button onClick={() => history.goBack()}>Back</Button>
               </CardActions>
             </Card>
-            <Modal />
           </div>
         );
       default:
@@ -140,7 +202,9 @@ Retro.propTypes = {
     messageCard: PropTypes.string.isRequired,
     columns: PropTypes.string.isRequired,
     users: PropTypes.string.isRequired,
-    hidden: PropTypes.string.isRequired
+    hidden: PropTypes.string.isRequired,
+    switch: PropTypes.string.isRequired,
+    searchbox: PropTypes.string.isRequired
   }).isRequired
 };
 

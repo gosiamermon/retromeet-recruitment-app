@@ -18,7 +18,9 @@ import {
   RETRO_USERS_KEY
 } from '../../reducers/retro';
 import { addMessage } from '../../actions/layout';
-import { USER_CONNECT_QUERY_KEY, USER_ID_KEY } from '../../reducers/user';
+import { showModal } from '../../actions/colSelectionModal'
+import { userSetSettings } from '../../actions/user'
+import { USER_CONNECT_QUERY_KEY, USER_ID_KEY, USER_SETTINGS_KEY } from '../../reducers/user';
 
 const mapStateToProps = ({ retro, user }) => ({
   name: retro[RETRO_NAME_KEY],
@@ -26,7 +28,7 @@ const mapStateToProps = ({ retro, user }) => ({
   columns: retro[RETRO_COLUMNS_KEY],
   cards: retro[RETRO_CARDS_KEY],
   users: retro[RETRO_USERS_KEY],
-  userId: user[USER_ID_KEY],
+  userSettings: user[USER_SETTINGS_KEY],
   scrumMasterId: retro[RETRO_SCRUM_MASTER_ID_KEY],
   step: retro[RETRO_STEP_KEY],
   connectQuery: user[USER_CONNECT_QUERY_KEY],
@@ -41,7 +43,9 @@ const mapDispatchToProps = dispatch => ({
   addColumn: (socket, name, icon) => dispatch(columnAdd(socket, name, icon)),
   removeColumn: (socket, id) => dispatch(columnRemove(socket, id)),
   setRetroId: retroId => dispatch(setRetroIdQueryParameter(retroId)),
-  addMessage: message => dispatch(addMessage(message))
+  addMessage: message => dispatch(addMessage(message)),
+  showModal: () => dispatch(showModal()),
+  setUserSettings: (socket, settings) => dispatch(userSetSettings(socket, settings))
 });
 
 export default withRouter(withStyles(styles, { withTheme: true })(

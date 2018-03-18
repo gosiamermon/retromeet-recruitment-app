@@ -1,16 +1,16 @@
 import { withStyles } from 'material-ui/styles';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import styles from './../../components/Retro/Modal.styles';
-import Modal from '../../components/Retro/Modal';
+import styles from './../../components/Retro/ConfirmModal.styles';
+import ConfirmModal from '../../components/Retro/ConfirmModal';
 
 import {
-  RETRO_MODAL_KEY
+  RETRO_CONFIRM_MODAL_KEY
 } from '../../reducers/retro';
-import { hideModal } from '../../actions/modal';
+import { hideModal } from '../../actions/confirmModal';
 
 const mapStateToProps = ({ retro }) => ({
-  modal: retro[RETRO_MODAL_KEY]
+  modal: retro[RETRO_CONFIRM_MODAL_KEY]
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -18,5 +18,5 @@ const mapDispatchToProps = dispatch => ({
 });
 
 export default withRouter(withStyles(styles, { withTheme: true })(
-  connect(mapStateToProps, mapDispatchToProps)(Modal)
+  connect(mapStateToProps, mapDispatchToProps)(ConfirmModal)
 ));

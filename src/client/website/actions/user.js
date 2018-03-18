@@ -8,6 +8,12 @@ export const USER_SET_NAME_IN_PROGRESS = 'USER_SET_NAME_IN_PROGRESS';
 export const USER_SET_NAME_SUCCESS = 'USER_SET_NAME_SUCCESS';
 export const USER_SET_NAME_FAILURE = 'USER_SET_NAME_FAILURE';
 
+export const ACTION_USER_SET_SETTINGS = 'user/set-settings';
+export const USER_SET_SETTINGS_IN_PROGRESS = 'USER_SET_SETTINGS_IN_PROGRESS';
+export const USER_SET_SETTINGS_SUCCESS = 'USER_SET_SETTINGS_SUCCESS';
+export const USER_SET_SETTINGS_FAILURE = 'USER_SET_SETTINGS_FAILURE';
+
+
 export const USER_DISCONNECT = 'USER_DISCONNECT';
 
 export const userConnect = (socket, token) => (dispatch) => {
@@ -23,3 +29,8 @@ export const userSetName = (socket, name) => (dispatch) => {
 export const userDisconnect = () => (dispatch) => {
   dispatch({ type: USER_DISCONNECT });
 };
+
+export const userSetSettings = (socket, settings) => (dispatch) => {
+  socket.emit(ACTION_USER_SET_SETTINGS, { settings });
+  dispatch({ type: USER_SET_SETTINGS_IN_PROGRESS });
+}

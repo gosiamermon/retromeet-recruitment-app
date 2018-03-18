@@ -1,4 +1,4 @@
-import { ACTION_USER_CONNECT, ACTION_USER_DISCONNECT, ACTION_USER_SET_NAME } from './user.actions';
+import { ACTION_USER_CONNECT, ACTION_USER_DISCONNECT, ACTION_USER_SET_NAME, ACTION_USER_SET_SETTINGS } from './user.actions';
 import User from '../../models/user.model';
 import { ACTION_RETRO_LEAVE } from '../retro/retro.actions';
 
@@ -40,6 +40,27 @@ export default {
 
     return {
       broadcast: { id: userId, name }
+    };
+  },
+  [ACTION_USER_SET_SETTINGS]:async (params, state) => {
+    const { settings: { columnsVisible } } = params;
+    const { userId } = state;
+
+    if (!userId) {
+      throw new Error('You are not logged in.');
+    }
+
+    const user = await User.findById(userId);
+    if (!user.settings) user.settings = {};
+    if (columnsVisible) user.settings.columnsVisible = columnsVisible;
+    await user.save();
+    
+    return {
+      broadcast: {
+        id: userId,
+        name: user.name,
+        settings: user.settings
+      }
     };
   },
   [ACTION_USER_DISCONNECT]: async (params, state, perform) => {

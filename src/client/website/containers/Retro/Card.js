@@ -14,7 +14,7 @@ import {
 } from '../../reducers/retro';
 import { cardEdit, cardRemove } from '../../actions/card';
 import { groupAdd } from '../../actions/cardsGroup'
-import { showModal } from '../../actions/modal';
+import { showModal } from '../../actions/confirmModal';
 import { USER_ID_KEY } from '../../reducers/user';
 import { addMessage } from '../../actions/layout';
 import { getUserSubmittedVotes } from '../../selectors/votes';

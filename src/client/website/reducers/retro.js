@@ -1,9 +1,13 @@
 import deepClone from '../services/utils/deepClone';
 import { handleQuery, QUERY_DEFAULT } from '../services/websocket/query';
 import {
-  SHOW_MODAL,
-  HIDE_MODAL
-} from '../actions/modal'
+  SHOW_COL_SELECTION_MODAL,
+  HIDE_COL_SELECTION_MODAL
+} from '../actions/colSelectionModal';
+import {
+  SHOW_CONFIRM_MODAL,
+  HIDE_CONFIRM_MODAL
+} from '../actions/confirmModal'
 import {
   GROUP_ADD_FAILURE,
   GROUP_ADD_IN_PROGRESS,
@@ -86,7 +90,8 @@ export const GROUP_REMOVE_QUERY_KEY = 'removeGroup';
 export const GROUP_EDIT_QUERY_KEY = 'editGroup';
 export const VOTES_KEY = 'votes';
 export const STEPS_CHANGE_QUERY_KEY = 'stepChange';
-export const RETRO_MODAL_KEY = 'modal';
+export const RETRO_CONFIRM_MODAL_KEY = 'confirmModal';
+export const RETRO_COL_SELECTION_MODAL_KEY = 'colSelectionModal';
 
 // ------------------------------------
 // Reducer`
@@ -101,7 +106,8 @@ const initialState = {
   [RETRO_COLUMNS_KEY]: [],
   [RETRO_CARDS_KEY]: [],
   [RETRO_GROUPS_KEY]: [],
-  [RETRO_MODAL_KEY]: { show: false, submitAction: undefined, text: '' },
+  [RETRO_CONFIRM_MODAL_KEY]: { show: false, submitAction: undefined, text: '' },
+  [RETRO_COL_SELECTION_MODAL_KEY]: { show: false },
   [RETRO_NEW_QUERY_KEY]: QUERY_DEFAULT(),
   [RETRO_RENAME_QUERY_KEY]: QUERY_DEFAULT(),
   [RETRO_JOIN_QUERY_KEY]: QUERY_DEFAULT(),
@@ -168,21 +174,35 @@ const ACTION_HANDLERS = {
 
     return newState;
   },
-  [SHOW_MODAL]: (state, { payload }) => {
+  [SHOW_CONFIRM_MODAL]: (state, { payload }) => {
     const newState = deepClone(state);
-    newState[RETRO_MODAL_KEY] = {
+    newState[RETRO_CONFIRM_MODAL_KEY] = {
       show: true,
       submitAction: payload.submitAction,
       text: payload.text
     }
     return newState;
   },
-  [HIDE_MODAL]: (state, payload) => {
+  [HIDE_CONFIRM_MODAL]: (state, payload) => {
     const newState = deepClone(state);
-    newState[RETRO_MODAL_KEY] = {
+    newState[RETRO_CONFIRM_MODAL_KEY] = {
       show: false,
       submitAction: undefined,
       text: ''
+    }
+    return newState;
+  },
+  [SHOW_COL_SELECTION_MODAL]: (state) => {
+    const newState = deepClone(state);
+    newState[RETRO_COL_SELECTION_MODAL_KEY] = {
+      show: true
+    }
+    return newState;
+  },
+  [HIDE_COL_SELECTION_MODAL]: (state) => {
+    const newState = deepClone(state);
+    newState[RETRO_COL_SELECTION_MODAL_KEY] = {
+      show: false,
     }
     return newState;
   },

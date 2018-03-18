@@ -21,9 +21,9 @@ import {
 } from '../../services/websocket/query';
 import ConfirmActionDialog from '../../containers/ConfirmActionDialog';
 import Votes from '../../components/Votes';
-import Modal from '../../containers/Retro/Modal';
 
 export const CARD = 'CARD';
+export const CONFIRM_QUESTION = 'Would you like to merge these cards?';
 
 class Card extends Component {
   constructor(props) {
@@ -33,8 +33,7 @@ class Card extends Component {
     this.addVote = this.vote.bind(this, true);
     this.removeVote = this.vote.bind(this, false);
     this.mergeCards = this.merge.bind(this);
-    this.draggableData = {}
-    this.confirmMergeQuestion = 'Would you like to merge these cards?'
+    this.draggableData = {};
   }
 
   componentDidMount() {
@@ -123,7 +122,7 @@ class Card extends Component {
     this.draggableData = JSON.parse(e.dataTransfer.getData("text"));
     const { card, showModal } = this.props;
     if(this.draggableData.type === CARD && card.id !== this.draggableData.id) {
-      showModal(this.confirmMergeQuestion, this.mergeCards);
+      showModal(CONFIRM_QUESTION, this.mergeCards);
     }
   };
 

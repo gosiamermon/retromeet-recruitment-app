@@ -1,7 +1,7 @@
 import { withStyles } from 'material-ui/styles';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import styles from './../../components/Retro/CardsGroup.styles';
+import styles from './../../components/Retro/Card.styles';
 import CardsGroup from '../../components/Retro/CardsGroup';
 import {
   GROUP_EDIT_QUERY_KEY,
@@ -11,6 +11,7 @@ import {
   RETRO_VOTE_LIMIT_KEY
 } from '../../reducers/retro';
 import { groupEdit, groupRemove } from '../../actions/cardsGroup';
+import { showModal } from '../../actions/confirmModal';
 import { USER_ID_KEY } from '../../reducers/user';
 import { addMessage } from '../../actions/layout';
 import { getUserSubmittedVotes } from '../../selectors/votes';
@@ -28,7 +29,8 @@ const mapStateToProps = ({ retro, user }) => ({
 const mapDispatchToProps = dispatch => ({
   editGroup: (socket, group) => dispatch(groupEdit(socket, group)),
   removeGroup: (socket, groupId) => dispatch(groupRemove(socket, groupId)),
-  addMessage: message => dispatch(addMessage(message))
+  addMessage: message => dispatch(addMessage(message)),
+  showModal: (text, submitAction) => dispatch(showModal(text, submitAction))
 });
 
 export default withRouter(withStyles(styles)(

@@ -15,6 +15,12 @@ const userSchema = mongoose.Schema({
   token: {
     type: String,
     required: 'Token is required'
+  },
+  settings: {
+    columnsVisible: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Column'
+    }]
   }
 });
 

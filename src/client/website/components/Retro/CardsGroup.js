@@ -9,7 +9,7 @@ import {
   TextField,
   Typography
 } from 'material-ui';
-import KeyboardArrowRightIcon from 'material-ui-icons/KeyboardArrowRight';
+import CloseIcon from 'material-ui-icons/Close';
 import Done from 'material-ui-icons/Done';
 import { FormattedMessage } from 'react-intl';
 import {
@@ -19,7 +19,7 @@ import {
 } from '../../services/websocket/query';
 import ConfirmActionDialog from '../../containers/ConfirmActionDialog';
 import Votes from '../../components/Votes';
-import { CARD } from './Card';
+import { CARD, CONFIRM_QUESTION } from './Card';
 
 export const GROUP = 'GROUP';
 
@@ -28,6 +28,8 @@ class CardsGroup extends Component {
     super(props);
     this.addVote = this.vote.bind(this, true);
     this.removeVote = this.vote.bind(this, false);
+    this.mergeCards = this.merge.bind(this);
+    this.draggableData = {};
   }
 
   componentWillReceiveProps(nextProps) {
@@ -67,18 +69,23 @@ class CardsGroup extends Component {
     e.preventDefault();
   };
 
-  onDrop = (e) => {
+  showModal = (e) => {
     e.preventDefault();
-    const draggableData = JSON.parse(e.dataTransfer.getData("text"));
-
-    if (draggableData.type === CARD) {
-      const { cardsGroup, editGroup } = this.props;
-      const { socket } = this.context;
-      const cardsIds = cardsGroup.cards.map(card => card.id);
-      cardsIds.push(draggableData.id);
-      editGroup(socket, {id: cardsGroup.id, cardsIds });
+    this.draggableData = JSON.parse(e.dataTransfer.getData("text"));
+    const { cardsGroup, showModal } = this.props;
+    if(this.draggableData.type === CARD) {
+      showModal(CONFIRM_QUESTION, this.mergeCards);
     }
   };
+
+  merge = () => {
+    const { cardsGroup, editGroup } = this.props;
+    const { socket } = this.context;
+    const cardsIds = cardsGroup.cards.map(card => card.id);
+    cardsIds.push(this.draggableData.id);
+    editGroup(socket, {id: cardsGroup.id, cardsIds });
+  }
+
 
   removeCardFromGroup = (cardId) => {
     const { socket } = this.context;
@@ -89,7 +96,7 @@ class CardsGroup extends Component {
     }
     let cardsIds = cardsGroup.cards.map(card => card.id);
     const index = cardsIds.indexOf(cardId);
-    cardsIds = cardsIds.splice(index, 1);
+    cardsIds.splice(index, 1);
     editGroup(socket, {id: cardsGroup.id, cardsIds });
   };
 
@@ -110,43 +117,42 @@ class CardsGroup extends Component {
       <div className={classes.draggableWrapper} id={cardsGroup.id} draggable={draggable}
         style={style}
         onDragOver={(e)=>{ this.allowDrop(e); }}
-        onDrop={(e) => {this.onDrop(e)}}
+        onDrop={(e) => {this.showModal(e)}}
         onDragStart={(e)=>{this.onDragStart(e); }}
         onDragEnd={(e)=>{this.onDragEnd(e)}}
       >
         <MaterialCard
-          className={classes.cardsGroup}
+          className={classes.card}
         >
-          <CardContent key="content">
-            {
-              cardsGroup.cards.map((card, index) => (
-                <div key={index}>
-                  <hr className={classes.line}></hr>
-                  <div className={classes.cardWrapper} >
-                    <div className={classes.textWrapper}>
-                      <Typography align="left" className={classes.text}>
-                        {card.text}
-                      </Typography>
-                    </div>
-                    <div className={classes.removeCardWrapper}>
-                      <IconButton onClick={() => this.removeCardFromGroup(card.id)}>
-                        <KeyboardArrowRightIcon />
-                      </IconButton>
-                    </div>
-                  </div>
-                </div>
-              ))
-            }          
-          </CardContent>
-          {retroStep === 'vote' &&
-            <Votes
-              key="votes"
-              disabled={votes - userSubmmitedVotes <= 0}
-              totalVotesNr={cardsGroup.votes.length}
-              userVotesNr={cardsGroup.votes.filter(v => v === userId).length}
-              addUserVote={this.addVote}
-              removeUserVote={this.removeVote}
-            />}
+          {
+            cardsGroup.cards.map((card, index) => (
+              <div key={index}>
+                <CardContent key="content">
+                  <Typography align="left" className={classes.text}>
+                    {card.text}
+                  </Typography>
+                  <CardActions key="actions" className={classes.cardActions}>
+                    {card.authors.map(({ id, name }) => (
+                      <Button key={id} size="small" className={classes.author}>{name}</Button>
+                    ))}
+                    <div className={classes.expander} />
+                    <IconButton key="detach" className={classes.action} onClick={() => this.removeCardFromGroup(card.id)}>
+                      <CloseIcon />
+                    </IconButton>
+                  </CardActions>
+              </CardContent>
+              </div>
+            ))
+          }          
+        {retroStep === 'vote' &&
+          <Votes
+            key="votes"
+            disabled={votes - userSubmmitedVotes <= 0}
+            totalVotesNr={cardsGroup.votes.length}
+            userVotesNr={cardsGroup.votes.filter(v => v === userId).length}
+            addUserVote={this.addVote}
+            removeUserVote={this.removeVote}
+          />}
         </MaterialCard>
       </div>         
     );
@@ -176,13 +182,10 @@ CardsGroup.propTypes = {
   editGroupQuery: PropTypes.shape(QueryShape).isRequired,
   // Styles
   classes: PropTypes.shape({
-    cardsGroup: PropTypes.string.isRequired,
+    card: PropTypes.string.isRequired,
     text: PropTypes.string,
-    line: PropTypes.string.isRequired,
-    cardWrapper: PropTypes.string,
-    textWrapper: PropTypes.string,
-    removeCardWrapper: PropTypes.string
-
+    expander: PropTypes.string,
+    author: PropTypes.string
   }).isRequired
 };
 

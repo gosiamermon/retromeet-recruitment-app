@@ -57,7 +57,10 @@ class Column extends Component {
     editGroup(socket, {id: data.id, columnId: id});
   };
 
-  prepareCardsAndGroups(cards, groups) {
+  prepareCardsAndGroups() {
+    let cards = deepClone(this.props.cards);
+    let groups = deepClone(this.props.groups);
+    const { searchPhrase, sort } = this.props;
     groups.forEach(group => {
       group.cards = cards.filter(card => 
         group.cardsIds.some(cardId => cardId === card.id));
@@ -68,12 +71,33 @@ class Column extends Component {
     groups.forEach(group => {
       delete group.cardsIds;
     });
+    if (sort) {
+      cards = this.sortByVotes(cards);
+      groups = this.sortByVotes(groups);
+    }
+    if (searchPhrase) {
+      cards = cards.filter(c => c.text.includes(searchPhrase));
+      groups = groups.filter(group => group.cards
+        .some(c => c.text.includes(searchPhrase)));
+    }
     return { cards, groups };
   };
 
+  sortByVotes(items) {
+    const compare = (a,b) => {
+      if (a.votes.length > b.votes.length)
+        return -1;
+      if (a.votes.length < b.votes.length)
+        return 1;
+      return 0;
+    }
+    
+    return items.sort(compare);
+  }
+
   render() {
-    const { column, classes, cards, groups } = this.props;
-    const prepared = this.prepareCardsAndGroups(deepClone(cards), deepClone(groups));
+    const { column, classes, searchPhrase } = this.props;
+    const prepared = this.prepareCardsAndGroups();
 
     return (
       <div id={column.id} className={classes.column}

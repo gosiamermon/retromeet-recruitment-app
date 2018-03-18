@@ -7,9 +7,9 @@ import {
   Button
 } from 'material-ui';
 
-class Modal extends Component {
+class ConfirmModal extends Component {
 
-  performAction(){
+  performAction = () => {
     const { modal, hideModal } = this.props;
     modal.submitAction();
     hideModal();
@@ -20,17 +20,17 @@ class Modal extends Component {
     return(
       <Dialog open={ modal.show }>
         <DialogTitle>{ modal.text }</DialogTitle>
-            <DialogActions>
-                <Button onClick={() => { this.performAction(); }}>
-                        Merge
-                  </Button>
-                  <Button onClick={() => { hideModal(); }}>
-                        Cancel
-                  </Button>
+          <DialogActions>
+            <Button onClick={ this.performAction }>
+                    Yes
+              </Button>
+              <Button onClick={ hideModal }>
+                    No
+            </Button>
         </DialogActions>
     </Dialog>
     );
   }
 }
 
-export default Modal;
+export default ConfirmModal;

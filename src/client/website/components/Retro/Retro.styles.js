@@ -39,6 +39,23 @@ const styles = theme => ({
   },
   hidden: {
     display: 'none'
+  },
+  switch: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  toolbar: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginRight: '5%'
+  },
+  colSelectionButton: {
+    fontSize: '35px'
+  },
+  searchbox: {
+    marginLeft: '2%',
+    marginTop: '2%'
   }
 });
 

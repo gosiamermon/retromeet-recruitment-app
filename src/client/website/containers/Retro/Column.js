@@ -15,8 +15,6 @@ import { groupEdit } from '../../actions/cardsGroup';
 import { addMessage } from '../../actions/layout';
 
 const mapStateToProps = ({ retro }) => ({
-  cards: retro[RETRO_CARDS_KEY],
-  groups: retro[RETRO_GROUPS_KEY],
   editColumnQuery: retro[COLUMN_EDIT_QUERY_KEY],
   addCardQuery: retro[CARD_ADD_QUERY_KEY]
 });

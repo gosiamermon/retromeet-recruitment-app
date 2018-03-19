@@ -15,10 +15,12 @@ import {
   RETRO_RENAME_QUERY_KEY, RETRO_SCRUM_MASTER_ID_KEY,
   RETRO_SHARE_ID_KEY,
   RETRO_STEP_KEY,
-  RETRO_USERS_KEY
+  RETRO_USERS_KEY,
+  RETRO_GROUPS_KEY
 } from '../../reducers/retro';
 import { addMessage } from '../../actions/layout';
-import { showModal } from '../../actions/colSelectionModal'
+import { showColSelectionModal } from '../../actions/colSelectionModal';
+import { showConfirmModal } from '../../actions/confirmModal'
 import { userSetSettings } from '../../actions/user'
 import { USER_CONNECT_QUERY_KEY, USER_ID_KEY, USER_SETTINGS_KEY } from '../../reducers/user';
 
@@ -27,6 +29,7 @@ const mapStateToProps = ({ retro, user }) => ({
   shareId: retro[RETRO_SHARE_ID_KEY],
   columns: retro[RETRO_COLUMNS_KEY],
   cards: retro[RETRO_CARDS_KEY],
+  groups: retro[RETRO_GROUPS_KEY],
   users: retro[RETRO_USERS_KEY],
   userSettings: user[USER_SETTINGS_KEY],
   scrumMasterId: retro[RETRO_SCRUM_MASTER_ID_KEY],
@@ -44,7 +47,8 @@ const mapDispatchToProps = dispatch => ({
   removeColumn: (socket, id) => dispatch(columnRemove(socket, id)),
   setRetroId: retroId => dispatch(setRetroIdQueryParameter(retroId)),
   addMessage: message => dispatch(addMessage(message)),
-  showModal: () => dispatch(showModal()),
+  showColSelectionModal: () => dispatch(showColSelectionModal()),
+  showConfirmModal: (text, submitAction) => dispatch(showConfirmModal(text, submitAction)),
   setUserSettings: (socket, settings) => dispatch(userSetSettings(socket, settings))
 });
 

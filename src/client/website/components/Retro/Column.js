@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { IconButton, Typography } from 'material-ui';
 import PlaylistAdd from 'material-ui-icons/PlaylistAdd';
-import { Droppable } from 'react-beautiful-dnd';
 import * as _ from 'lodash';
 import Card from '../../containers/Retro/Card';
 import { CARD } from './Card';
@@ -57,48 +56,8 @@ class Column extends Component {
     editGroup(socket, {id: data.id, columnId: id});
   };
 
-  prepareCardsAndGroups() {
-    let cards = deepClone(this.props.cards);
-    let groups = deepClone(this.props.groups);
-    const { searchPhrase, sort } = this.props;
-    groups.forEach(group => {
-      group.cards = cards.filter(card => 
-        group.cardsIds.some(cardId => cardId === card.id));
-    });
-    const allGroupedCardsIds = [].concat.apply([], groups.map(group => group.cardsIds));
-    cards = cards.filter(card => !allGroupedCardsIds.some(cardId => cardId === card.id));
-
-    groups.forEach(group => {
-      delete group.cardsIds;
-    });
-    if (sort) {
-      cards = this.sortByVotes(cards);
-      groups = this.sortByVotes(groups);
-    }
-    if (searchPhrase) {
-      cards = cards.filter(c => c.text.includes(searchPhrase));
-      groups = groups.filter(group => group.cards
-        .some(c => c.text.includes(searchPhrase)));
-    }
-    return { cards, groups };
-  };
-
-  sortByVotes(items) {
-    const compare = (a,b) => {
-      if (a.votes.length > b.votes.length)
-        return -1;
-      if (a.votes.length < b.votes.length)
-        return 1;
-      return 0;
-    }
-    
-    return items.sort(compare);
-  }
-
   render() {
-    const { column, classes, searchPhrase } = this.props;
-    const prepared = this.prepareCardsAndGroups();
-
+    const { column, classes, cards, groups } = this.props;
     return (
       <div id={column.id} className={classes.column}
         onDragOver={(e)=>{ this.allowDrop(e); }}
@@ -115,10 +74,10 @@ class Column extends Component {
             <PlaylistAdd className={classes.actionIcon} />
           </IconButton>
         </div>
-        {prepared.groups.filter(group => column.id === group.columnId).map(group => (
+        {groups.filter(group => column.id === group.columnId).map(group => (
           <CardsGroup cardsGroup={group} key={group.id} />
         ))}
-        {prepared.cards.filter(card => column.id === card.columnId).map(card => (
+        {cards.filter(card => column.id === card.columnId).map(card => (
           <Card card={card} key={card.id} />
         ))}
       </div>

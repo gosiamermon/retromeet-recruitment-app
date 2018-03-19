@@ -1,7 +1,7 @@
 export const SHOW_COL_SELECTION_MODAL = 'SHOW_COL_SELECTION_MODAL';
 export const HIDE_COL_SELECTION_MODAL = 'HIDE_COL_SELECTION_MODAL';
 
-export const showModal = (text, submitAction) => (dispatch) => {
+export const showColSelectionModal = (text, submitAction) => (dispatch) => {
   dispatch({ type: SHOW_COL_SELECTION_MODAL });
 };
 

@@ -11,7 +11,7 @@ import {
   RETRO_VOTE_LIMIT_KEY
 } from '../../reducers/retro';
 import { groupEdit, groupRemove } from '../../actions/cardsGroup';
-import { showModal } from '../../actions/confirmModal';
+import { showConfirmModal } from '../../actions/confirmModal';
 import { USER_ID_KEY } from '../../reducers/user';
 import { addMessage } from '../../actions/layout';
 import { getUserSubmittedVotes } from '../../selectors/votes';
@@ -30,7 +30,7 @@ const mapDispatchToProps = dispatch => ({
   editGroup: (socket, group) => dispatch(groupEdit(socket, group)),
   removeGroup: (socket, groupId) => dispatch(groupRemove(socket, groupId)),
   addMessage: message => dispatch(addMessage(message)),
-  showModal: (text, submitAction) => dispatch(showModal(text, submitAction))
+  showConfirmModal: (text, submitAction) => dispatch(showConfirmModal(text, submitAction))
 });
 
 export default withRouter(withStyles(styles)(

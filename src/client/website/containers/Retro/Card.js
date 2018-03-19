@@ -14,7 +14,7 @@ import {
 } from '../../reducers/retro';
 import { cardEdit, cardRemove } from '../../actions/card';
 import { groupAdd } from '../../actions/cardsGroup'
-import { showModal } from '../../actions/confirmModal';
+import { showConfirmModal } from '../../actions/confirmModal';
 import { USER_ID_KEY } from '../../reducers/user';
 import { addMessage } from '../../actions/layout';
 import { getUserSubmittedVotes } from '../../selectors/votes';
@@ -36,7 +36,7 @@ const mapDispatchToProps = dispatch => ({
   removeCard: (socket, cardId) => dispatch(cardRemove(socket, cardId)),
   addGroup: (socket, columnId, cardsIds) => dispatch(groupAdd(socket, columnId, cardsIds)),
   addMessage: message => dispatch(addMessage(message)),
-  showModal: (text, submitAction) => dispatch(showModal(text, submitAction))
+  showConfirmModal: (text, submitAction) => dispatch(showConfirmModal(text, submitAction))
 });
 
 export default withRouter(withStyles(styles)(

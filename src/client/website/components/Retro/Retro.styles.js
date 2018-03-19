@@ -56,6 +56,18 @@ const styles = theme => ({
   searchbox: {
     marginLeft: '2%',
     marginTop: '2%'
+  },
+  downloadLink: {
+    display: 'none'
+  },
+  export: {
+    display: 'flex',
+    marginLeft: '5%'
+  },
+  exportButton: {
+    border: '1px solid lightgrey',
+    margin: '4px',
+    color: 'grey'
   }
 });
 

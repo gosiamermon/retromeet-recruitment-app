@@ -117,12 +117,12 @@ class Card extends Component {
     e.preventDefault();
   };
 
-  showModal = (e) => {
+  showConfirmModal = (e) => {
     e.preventDefault();
     this.draggableData = JSON.parse(e.dataTransfer.getData("text"));
-    const { card, showModal } = this.props;
+    const { card, showConfirmModal } = this.props;
     if(this.draggableData.type === CARD && card.id !== this.draggableData.id) {
-      showModal(CONFIRM_QUESTION, this.mergeCards);
+      showConfirmModal(CONFIRM_QUESTION, this.mergeCards);
     }
   };
 
@@ -150,9 +150,9 @@ class Card extends Component {
       <div className={classes.draggableWrapper} id={card.id} draggable={draggable}
         style={style}
         onDragOver={(e)=>{ this.allowDrop(e); }}
-        onDrop={(e) => {this.showModal(e)}}
+        onDrop={(e) => {this.showConfirmModal(e); }}
         onDragStart={(e)=>{this.onDragStart(e); }}
-        onDragEnd={(e)=>{this.onDragEnd(e)}}
+        onDragEnd={(e)=>{this.onDragEnd(e); }}
       >
         <MaterialCard
           className={classes.card}

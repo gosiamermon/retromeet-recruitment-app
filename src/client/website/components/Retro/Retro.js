@@ -23,12 +23,15 @@ import {
   QueryShape,
   querySucceeded
 } from '../../services/websocket/query';
+const csvToMarkdown = require('csv-to-markdown-table');
 import Column from '../../containers/Retro/Column';
 import Steps from '../../containers/Retro/Steps';
 import { initialsOf } from '../../services/utils/initials';
 import ConfirmModal from '../../containers/Retro/ConfirmModal';
 import ColSelectionModal from '../../containers/Retro/ColSelectionModal';
 import deepClone from '../../services/utils/deepClone';
+
+const CONFIRM_EXPORT_QUESTION = 'Would you like to export retro data?';
 
 class Retro extends Component {
   constructor(props) {
@@ -37,6 +40,10 @@ class Retro extends Component {
       sortColumns: false,
       searchPhrase: ''
     }
+    this.visibleCards = [];
+    this.visibleGroups = [];
+    this.link = undefined;
+    this.downloadFile = this.download.bind(this);
   }
   componentWillMount() {
     this.joinRetro();
@@ -71,7 +78,10 @@ class Retro extends Component {
     });
   };
 
-  selectVisibleColumns = (userSettings, columns) => {
+  selectVisibleColumns = () => {
+    let columns = deepClone(this.props.columns);
+    const { userSettings } = this.props;
+
     if (userSettings.columnsVisible) {
       columns = columns
       .filter(column => userSettings.columnsVisible
@@ -80,15 +90,115 @@ class Retro extends Component {
     return columns;
   };
 
+  prepareFileContent = (extension) => {
+    const extensionIsMd = extension === 'md';
+    let columns = deepClone(this.props.columns);
+    //check max rows number
+    const nrOfRowsInEachCol = [];
+    columns.forEach(col => {
+      const cards = this.visibleCards.filter(c => c.columnId === col.id);
+      const groups = this.visibleGroups.filter(g => g.columnId === col.id);
+      col.cardsAndGroups = groups.concat(cards);
+      nrOfRowsInEachCol.push(col.cardsAndGroups.length);
+    });
+
+    const maxNrOfRows = Math.max(...nrOfRowsInEachCol);
+    //append column headers
+    let fileContent = columns.map(c => `"${c.name}"`).join(',');
+    fileContent += '\n';
+    //append cards and groups
+    for (let i=0; i<maxNrOfRows; i++) {
+      let row = '';
+      columns.forEach(col => {
+        let text
+        if (col.cardsAndGroups[i]) {
+          text = col.cardsAndGroups[i].text ? col.cardsAndGroups[i].text : 
+            col.cardsAndGroups[i].cards.map(c => c.text).join(';');
+        }
+        else {
+          text = 'n/a';
+        }
+        row += `"${text}",`
+      });
+      fileContent += `${row}\n`;
+    }
+    //append extension
+    if (extensionIsMd) {
+      fileContent = csvToMarkdown(fileContent, ",", true);
+    }
+    fileContent = `data:text/${extension};charset=utf-8,\n${fileContent}`;
+    return fileContent;
+  };
+
+  prepareDownloadData = (extension) => {
+    const fileContent = this.prepareFileContent(extension);
+    const encodedUri = encodeURI(fileContent);
+    this.link = document.createElement("a");
+    this.link.setAttribute("href", encodedUri);
+    this.link.setAttribute("download", `retro.${extension}`);
+    document.body.appendChild(this.link); 
+  };
+
+  confirmExport = (extension) => {
+    this.prepareDownloadData(extension);
+    const { showConfirmModal } = this.props;
+    showConfirmModal(CONFIRM_EXPORT_QUESTION, this.downloadFile);
+  };
+
+  download = () => {
+    this.link.click();
+    this.link.remove();
+  };
+
+  prepareCardsAndGroups = () => {
+    let cards = deepClone(this.props.cards);
+    let groups = deepClone(this.props.groups);
+    const { searchPhrase, sortColumns } = this.state;
+    groups.forEach(group => {
+      group.cards = cards.filter(card => 
+        group.cardsIds.some(cardId => cardId === card.id));
+    });
+    const allGroupedCardsIds = [].concat.apply([], groups.map(group => group.cardsIds));
+    cards = cards.filter(card => !allGroupedCardsIds.some(cardId => cardId === card.id));
+
+    groups.forEach(group => {
+      delete group.cardsIds;
+    });
+    if (sortColumns) {
+      cards = this.sortByVotes(cards);
+      groups = this.sortByVotes(groups);
+    }
+    this.visibleCards = cards;
+    this.visibleGroups = groups;
+    if (searchPhrase) {
+      cards = cards.filter(c => c.text.includes(searchPhrase));
+      groups = groups.filter(group => group.cards
+        .some(c => c.text.includes(searchPhrase)));
+    }
+    return { cards, groups };
+  };
+
+  sortByVotes(items) {
+    const compare = (a,b) => {
+      if (a.votes.length > b.votes.length)
+        return -1;
+      if (a.votes.length < b.votes.length)
+        return 1;
+      return 0;
+    }
+    
+    return items.sort(compare);
+  }
+
   render() {
     const {
       classes,
-      columns,
       users,
-      userSettings,
+      cards,
+      groups,
       history,
       step,
-      showModal,
+      showColSelectionModal,
       joinRetroQuery: {
         [QUERY_STATUS_KEY]: joinStatus,
         [QUERY_ERROR_KEY]: joinError
@@ -96,11 +206,8 @@ class Retro extends Component {
     } = this.props;
     const { socket } = this.context;
     const { sortColumns, searchPhrase } = this.state;
-
-    const visibleColumns = this.selectVisibleColumns(userSettings, deepClone(columns));
-
-    const toggled = userSettings.columnsSorted !== undefined ? userSettings.columnsSorted : false;
-
+    const visibleColumns = this.selectVisibleColumns();
+    const prepared = this.prepareCardsAndGroups();
 
     switch (joinStatus) {
       case QUERY_STATUS_SUCCESS:
@@ -115,19 +222,29 @@ class Retro extends Component {
                 <Switch onChange={this.toggleSort} />
                 </div>
               }
-            <IconButton className={classes.colSelectionButton} onClick={showModal}>
-              <ViewColumnIcon />
-            </IconButton>
-            <TextField
-              className={classes.searchbox}
-              helperText="Input search phrase"
-              onChange={this.setSearchPhrase}
-            />
+              <IconButton className={classes.colSelectionButton} onClick={showColSelectionModal}>
+                <ViewColumnIcon />
+              </IconButton>
+              <TextField
+                className={classes.searchbox}
+                helperText="Input search phrase"
+                onChange={this.setSearchPhrase}
+              />
             </div>
             <div className={classes.columns}>
               {visibleColumns.map(column => (
-                <Column searchPhrase={searchPhrase} sort={sortColumns} key={column.id} column={column} />
+                <Column cards={prepared.cards} groups={prepared.groups} key={column.id} column={column} />
               ))}
+            </div>
+            <div className={classes.export}>
+              <Button className={classes.exportButton} 
+                onClick={() => { this.confirmExport('csv') }} >
+                Export to CSV
+              </Button>
+              <Button className={classes.exportButton} 
+                onClick={() => { this.confirmExport('md') }} >
+                Export to MD
+              </Button>
             </div>
             <div className={classes.users}>
               {Object.values(users).map(({ id, name }) => (
@@ -204,7 +321,9 @@ Retro.propTypes = {
     users: PropTypes.string.isRequired,
     hidden: PropTypes.string.isRequired,
     switch: PropTypes.string.isRequired,
-    searchbox: PropTypes.string.isRequired
+    searchbox: PropTypes.string.isRequired,
+    export: PropTypes.string.isRequired,
+    exportButton: PropTypes.string.isRequired
   }).isRequired
 };
 
